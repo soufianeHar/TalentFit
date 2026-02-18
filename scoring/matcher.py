@@ -1,19 +1,44 @@
 def compute_match_score(cv_data, job_data):
 
-    score = 0
+    total_score = 0
+    details = {}
 
-    # ---- Skills (50 pts) ----
-    required_skills = job_data["required_skills"]
-    matched_skills = [
-        skill for skill in required_skills
-        if skill in cv_data["skills"]
-    ]
+    must_have = job_data.get("must_have_skills", [])
+    nice_to_have = job_data.get("nice_to_have_skills", [])
 
-    if required_skills:
-        skills_score = (len(matched_skills) / len(required_skills)) * 50
-        score += skills_score
+    matched_must = [s for s in must_have if s in cv_data["skills"]]
+    missing_must = [s for s in must_have if s not in cv_data["skills"]]
 
-    # ---- Languages (20 pts) ----
+    if must_have and len(matched_must) == 0:
+        return {
+            "final_score": 0,
+            "details": {"reason": "No must-have skills matched"}
+        }
+
+    skills_score = 0
+
+    if must_have:
+        skills_score += (len(matched_must) / len(must_have)) * 40
+
+    matched_nice = [s for s in nice_to_have if s in cv_data["skills"]]
+    if nice_to_have:
+        skills_score += (len(matched_nice) / len(nice_to_have)) * 10
+    penalty = 0
+
+    if len(missing_must) > 0:
+        penalty = 10  # penalty for missing must-have
+
+    total_score += skills_score
+    total_score -= penalty
+
+    details["matched_must"] = matched_must
+    details["missing_must"] = missing_must
+    details["matched_nice"] = matched_nice
+    details["penalty"] = penalty
+    details["skills_score"] = round(skills_score, 2)
+
+
+    # ---- Languages ----
     required_languages = job_data["required_languages"]
     matched_languages = [
         lang for lang in required_languages
@@ -22,30 +47,53 @@ def compute_match_score(cv_data, job_data):
 
     if required_languages:
         lang_score = (len(matched_languages) / len(required_languages)) * 20
-        score += lang_score
+    else:
+        lang_score = 0
 
-    # ---- Experience (20 pts) ----
+    total_score += lang_score
+    details["language_score"] = round(lang_score, 2)
+    details["matched_languages"] = matched_languages
+
+    # ---- Experience ----
+    exp_score = 0
+    exp_gap = None
+
     if job_data["min_experience"] is not None and cv_data["years_experience"] is not None:
         min_exp = job_data["min_experience"]
         cv_exp = cv_data["years_experience"]
+        exp_gap = cv_exp - min_exp
 
         if cv_exp >= min_exp:
-            score += 20
+            exp_score = 20
         else:
-            score += (cv_exp / min_exp) * 20
+            exp_score = (cv_exp / min_exp) * 20
 
-    # ---- Tech level (10 pts) ----
+    total_score += exp_score
+    details["experience_score"] = round(exp_score, 2)
+    details["experience_gap"] = exp_gap
+
+    # ---- Tech level ----
+    level_score = 0
+    level_gap = None
     level_map = {"junior": 1, "intermediate": 2, "senior": 3}
 
     cv_level = cv_data["tech_level"]
     job_level = job_data["required_level"]
 
     if cv_level and job_level:
-        diff = level_map[cv_level] - level_map[job_level]
+        level_gap = level_map[cv_level] - level_map[job_level]
 
-        if diff >= 0:
-            score += 10
-        elif diff == -1:
-            score += 5
+        if level_gap >= 0:
+            level_score = 10
+        elif level_gap == -1:
+            level_score = 5
 
-    return round(score, 2)
+    total_score += level_score
+    details["level_score"] = level_score
+    details["level_gap"] = level_gap
+
+    return {
+        "final_score": round(total_score, 2),
+        "details": details
+    }
+

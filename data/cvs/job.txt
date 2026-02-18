@@ -1,5 +1,9 @@
 Looking for a Data Analyst.
-Required skills: Python, SQL.
+
+Must-have skills: Python, SQL.
+Nice-to-have skills: Power BI.
+
 Minimum 2 years experience.
 Languages: English.
 Level: intermediate.
+

@@ -31,11 +31,20 @@ def parse_job(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         text_content = f.read().lower()
 
-    for skill in KNOWN_SKILLS:
-        if skill in text_content:
-            job_data["required_skills"].append(skill)
-    
-        experience_match = re.search(r"(\d+)\+?\s+years?", text_content)
+# ---- Must-have skills ----
+    if "must-have skills" in text_content:
+        for skill in KNOWN_SKILLS:
+            if skill in text_content.split("must-have skills:")[1].split("\n")[0]:
+                job_data.setdefault("must_have_skills", []).append(skill)
+
+    # ---- Nice-to-have skills ----
+    if "nice-to-have skills" in text_content:
+        for skill in KNOWN_SKILLS:
+            if skill in text_content.split("nice-to-have skills:")[1].split("\n")[0]:
+                job_data.setdefault("nice_to_have_skills", []).append(skill)
+
+        
+    experience_match = re.search(r"(\d+)\+?\s+years?", text_content)
 
     if experience_match:
         job_data["min_experience"] = int(experience_match.group(1))
