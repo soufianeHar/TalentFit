@@ -1,0 +1,4 @@
+cv_name,rule_score,semantic_score,hybrid_score
+cv1.txt,100.0,0.9081,97.24
+cv2.txt,45.0,0.7195,53.08
+cv3.txt,0,0,0

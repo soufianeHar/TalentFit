@@ -27,9 +27,11 @@ def parse_job(file_path):
         "required_languages": [],
         "required_level": None
     }
-
+    
     with open(file_path, "r", encoding="utf-8") as f:
         text_content = f.read().lower()
+
+    job_data["raw_text"] = text_content
 
 # ---- Must-have skills ----
     if "must-have skills" in text_content:

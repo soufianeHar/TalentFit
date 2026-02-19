@@ -47,6 +47,8 @@ def parse_cv(file_path):
     print("File successfully read.")
 
     text_content = text_content.lower()
+    
+    cv_data["raw_text"] = text_content
 
     extracted_skills = []
 
