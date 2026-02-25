@@ -1,66 +1,40 @@
-import re
+import os
+from PyPDF2 import PdfReader
+from docx import Document
+from nlp.job_extractor import build_job_data
 
-KNOWN_SKILLS = [
-    "python",
-    "sql",
-    "power bi",
-    "excel",
-    "tableau",
-    "machine learning",
-    "pandas",
-    "numpy"
+# Bank MVP (à agrandir plus tard)
+SKILL_BANK = [
+    "python", "sql", "power bi", "machine learning",
+    "deep learning", "excel", "tableau",
+    "business intelligence", "data analysis"
 ]
 
-KNOWN_LANGUAGES = [
-    "english",
-    "french",
-    "german",
-    "spanish",
-    "arabic"
-]
+def extract_text_from_pdf(path):
+    text = ""
+    reader = PdfReader(path)
+    for page in reader.pages:
+        text += page.extract_text() or ""
+    return text
 
-def parse_job(file_path):
+def extract_text_from_docx(path):
+    doc = Document(path)
+    return "\n".join([p.text for p in doc.paragraphs])
 
-    job_data = {
-        "required_skills": [],
-        "min_experience": None,
-        "required_languages": [],
-        "required_level": None
-    }
-    
-    with open(file_path, "r", encoding="utf-8") as f:
-        text_content = f.read().lower()
+def extract_text_from_txt(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
 
-    job_data["raw_text"] = text_content
+def parse_job(path):
+    ext = os.path.splitext(path)[1].lower()
 
-# ---- Must-have skills ----
-    if "must-have skills" in text_content:
-        for skill in KNOWN_SKILLS:
-            if skill in text_content.split("must-have skills:")[1].split("\n")[0]:
-                job_data.setdefault("must_have_skills", []).append(skill)
+    if ext == ".pdf":
+        raw_text = extract_text_from_pdf(path)
+    elif ext == ".docx":
+        raw_text = extract_text_from_docx(path)
+    elif ext == ".txt":
+        raw_text = extract_text_from_txt(path)
+    else:
+        raise ValueError("Unsupported file format")
 
-    # ---- Nice-to-have skills ----
-    if "nice-to-have skills" in text_content:
-        for skill in KNOWN_SKILLS:
-            if skill in text_content.split("nice-to-have skills:")[1].split("\n")[0]:
-                job_data.setdefault("nice_to_have_skills", []).append(skill)
-
-        
-    experience_match = re.search(r"(\d+)\+?\s+years?", text_content)
-
-    if experience_match:
-        job_data["min_experience"] = int(experience_match.group(1))
-
-    for lang in KNOWN_LANGUAGES:
-
-        if lang in text_content:
-            job_data["required_languages"].append(lang)
-
-        if "junior" in text_content:
-            job_data["required_level"] = "junior"
-        elif "intermediate" in text_content:
-            job_data["required_level"] = "intermediate"
-        elif "senior" in text_content:
-            job_data["required_level"] = "senior"
-
-    return job_data
+    return build_job_data(raw_text, SKILL_BANK)
